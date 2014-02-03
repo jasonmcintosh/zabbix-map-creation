@@ -1,7 +1,7 @@
 zabbix-map-creation
 ===================
 
-A script to create a zabbix map from a graphviz.dot file (http://blog.zabbix.com/maps-for-the-lazy/2898/)
+A script to create a zabbix map from a graphviz.dot file
 
 
 This is code updated from:
