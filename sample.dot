@@ -1,0 +1,25 @@
+graph G {
+	//These are attempts to manipulate the layout.
+	//Better ways exist, I'm certain.
+
+	//Force straight lines
+	graph [layout=dot overlap=false sep="+5,5" splines=false]
+	//Force icons to be considered of the same and constant size
+	node [shape=box fixedsize=true width=1 height=1]
+
+	//We don't want to type the long hostname when defining edges
+	server1 [hostname="server1.name", zbximage="Rackmountable_1U_server_3D_(128)"]
+	databaseserver1 [hostname="databaseserver1.name", zbximage="Rackmountable_1U_server_3D_(128)"]
+
+
+	server2 [hostname="server2.name", zbximage="Rackmountable_1U_server_3D_(128)"]
+
+	loadbalancer [hostname="virtualip" zbximage="Rackmountable_1U_server_3D_(128)"]
+
+	//This notation allows for muliple edges from router in one go
+	loadbalancer -- { server1 server2 } [color="green"]
+	server1 -- databaseserver1
+
+	//A separate daisy chain of nodes without further details
+	//host_a -- host_b -- host_c -- host_d [label="Wheee"]
+}
