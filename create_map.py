@@ -19,18 +19,19 @@ This script is meant as an example only!
 import networkx as nx
 import optparse
 import sys
-from zabbix_api import ZabbixAPI
+from pyzabbix import ZabbixAPI
 parser = optparse.OptionParser()
-parser.add_option('--username', help="Username", default="admin")
-parser.add_option('--password', help="Password", default="zabbix")
-parser.add_option('--host', help="Host To talk to the web api", default="localhost")
-parser.add_option('--path', help="Path", default="/zabbix/")
-parser.add_option('--mapfile', help=".dot graphviz file for imput", default="data.dot")
-parser.add_option('--mapname', help="Map name to put into zabbix")
+parser.add_option('-u', '--username', help="Username", default="admin")
+parser.add_option('-p', '--password', help="Password", default="zabbix")
+parser.add_option('-s', '--host', help="Host To talk to the web api", default="localhost")
+parser.add_option('-d', '--path', help="Path", default="/zabbix/")
+parser.add_option('-f', '--mapfile', help=".dot graphviz file for imput", default="data.dot")
+parser.add_option('-n', '--mapname', help="Map name to put into zabbix")
 (options,args)=parser.parse_args()
 
 if not options.mapname:
 	print "Must have a map name!"
+	parser.print_help()
 	sys.exit(-1)
 
 width = 1920 
@@ -66,20 +67,26 @@ colors = {
 }
 
 def icons_get():
-    icons = {}
-    iconsData = zapi.icons.get({"output":["imageid","name"]})
-	for icon in iconsData[result]:
+	icons = {}
+	iconsData = zapi.image.get(output=["imageid","name"])
+	for icon in iconsData:
 		icons[icon["name"]] = icon["imageid"]
+	return icons
 
 def api_connect():
-    zapi = ZabbixAPI(server=options.host, path=options.path, log_level=1)
+    zapi = ZabbixAPI("http://" + options.host + options.path)
     zapi.login(options.username, options.password)
     return zapi
 
 def host_lookup(hostname):
-    hostid = zapi.host.get({"filter": {"host": hostname}})
+    hostid = zapi.host.get(filter={"host": hostname})
     if hostid:
         return str(hostid[0]['hostid'])
+
+def map_lookup(mapname):
+    mapid = zapi.map.get(filter={"name": mapname})
+    if mapid:
+        return str(mapid[0]['sysmapid'])
 
 ################################################################
 
@@ -116,6 +123,8 @@ element_params=[]
 link_params=[]
 
 zapi = api_connect()
+icons = icons_get()
+
 
 # Prepare node information
 for node, data in G.nodes_iter(data=True):
@@ -132,8 +141,15 @@ for node, data in G.nodes_iter(data=True):
         map_element.update({
                 "elementtype": ELEMENT_TYPE_HOST,
                 "elementid": host_lookup(data['hostname'].strip('"')),
-                "iconid_off": icons['server'],
+                "iconid_off": icons['Rackmountable_2U_server_3D_(128)'],
                 })
+    elif "map" in data:
+        map_element.update({
+		"elementtype": ELEMENT_TYPE_MAP,
+		"elementid": map_lookup(data['map'].strip('"')),
+                "iconid_off": icons['Cloud_(96)'],
+                })
+		
     else:
         map_element.update({
             "elementtype": ELEMENT_TYPE_IMAGE,
@@ -152,7 +168,7 @@ for node, data in G.nodes_iter(data=True):
         })
     elif "hostname" not in data and "zbximage" not in data:
         map_element.update({
-            "iconid_off": icons['default'],
+            "iconid_off": icons['Cloud_(96)'],
         })
 
     element_params.append(map_element)
@@ -190,8 +206,15 @@ map_params["selements"] = element_params
 map_params["links"] = link_params
     
 # Get rid of an existing map of that name and create a new one
-del_mapid = zapi.map.get({"filter": {"name": options.mapname}})
+del_mapid = zapi.map.get(filter={"name": options.mapname})
 if del_mapid:
-    zapi.map.delete([del_mapid[0]['sysmapid']])
-
-map=zapi.map.create(map_params)
+	zapi.map.update({"sysmapid":del_mapid[0]['sysmapid'], "links":[], "selements":[], "urls":[] })
+	map_params["sysmapid"] = del_mapid[0]['sysmapid']
+	#del map_params["name"]
+	#del map_params["label_format"]
+	#del map_params["label_type_image"]
+	#del map_params["width"]
+	#del map_params["height"]
+	map=zapi.map.update(map_params)
+else:
+	map = zapi.map.create(map_params)

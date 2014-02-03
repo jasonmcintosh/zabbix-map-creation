@@ -1,1 +1,3 @@
-data/*
+data
+*.pyc
+create_all.sh
