@@ -27,6 +27,7 @@ parser.add_option('-s', '--host', help="Host To talk to the web api", default="l
 parser.add_option('-d', '--path', help="Path", default="/zabbix/")
 parser.add_option('-f', '--mapfile', help=".dot graphviz file for imput", default="data.dot")
 parser.add_option('-n', '--mapname', help="Map name to put into zabbix")
+parser.add_option('-r', '--protocol', help="Protocol to be used", default="http")
 (options,args)=parser.parse_args()
 
 if not options.mapname:
@@ -74,7 +75,7 @@ def icons_get():
 	return icons
 
 def api_connect():
-    zapi = ZabbixAPI("http://" + options.host + options.path)
+    zapi = ZabbixAPI(options.protocol + "://" + options.host + options.path)
     zapi.login(options.username, options.password)
     return zapi
 
