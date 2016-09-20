@@ -92,10 +92,10 @@ def map_lookup(mapname):
 ################################################################
 
 # Convert your dot file to a graph
-G=nx.read_dot(options.mapfile)
+G=nx.drawing.nx_agraph.read_dot(options.mapfile)
 
 # Use an algorithm of your choice to layout the nodes in x and y
-pos = nx.graphviz_layout(G)
+pos = nx.drawing.nx_agraph.graphviz_layout(G)
 
 # Find maximum coordinate values of the layout to scale it better to the desired output size
 #TODO: The scaling could probably be solved within Graphviz
